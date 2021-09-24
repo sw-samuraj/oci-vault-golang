@@ -3,7 +3,7 @@ module cz.sw-samuraj/oci-vault
 go 1.17
 
 require (
-	github.com/oracle/oci-go-sdk/v46 v46.2.0
+	github.com/oracle/oci-go-sdk/v47 v47.1.0
 	github.com/sirupsen/logrus v1.8.1
 )
 

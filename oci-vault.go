@@ -1,80 +1,45 @@
 package main
 
 import (
-	"context"
-	"github.com/oracle/oci-go-sdk/v46/common"
-	"github.com/oracle/oci-go-sdk/v46/secrets"
-	log "github.com/sirupsen/logrus"
+	k "cz.sw-samuraj/oci-vault/kms"
+	l "cz.sw-samuraj/oci-vault/logging"
+	"github.com/sirupsen/logrus"
 )
 
 const (
-	secretId = "ocid1.vaultsecret.oc1.phx.amaaaaaayrywvyyatfzgkrnxmdr2crt5npuq66yrryc6qviapidlqsyeinza"
+	// compartment: sw-samuraj/vault-golang
+	compartmentId = "ocid1.compartment.oc1..aaaaaaaangukhnc5jjl34tzm6dbh3blca3f4uviti3niavpttn6qgxddlsna"
+	secretId      = "ocid1.vaultsecret.oc1.phx.amaaaaaayrywvyyatfzgkrnxmdr2crt5npuq66yrryc6qviapidlqsyeinza"
 )
 
 func init() {
-	log.SetFormatter(&log.TextFormatter{
+	logrus.SetFormatter(&logrus.TextFormatter{
 		FullTimestamp: true,
 	})
-	log.SetLevel(log.DebugLevel)
+	logrus.SetLevel(logrus.DebugLevel)
 }
 
 func main() {
-	logger := funcLog("main")
-	logger.Info("starting the secret service example")
+	log := l.FuncLog("main")
+	log.Info("starting the vault service example")
 
-	client := getSecretsClient()
+	log.Info("getting the vaults kms client...")
+	kmsClient := k.GetKmsClient()
 
-	listSecretVersions(client)
-	getSecret(client)
-}
+	log.Info("listing vaults...")
+	vaults := k.ListVaults(kmsClient, compartmentId)
 
-func listSecretVersions(client secrets.SecretsClient) {
-	logger := funcLog("listSecretVersions")
+	log.Info("deleting existing vaults...")
+	k.DeleteExistingVaults(kmsClient, vaults)
 
-	request := secrets.ListSecretBundleVersionsRequest{
-		OpcRequestId: common.String("42-get-my-secret"),
-		SecretId:     common.String(secretId),
-	}
+	log.Info("getting the vaults client...")
+	// vaultsClient := v.GetVaultsClient()
 
-	logger.Info("calling the secret service...")
-	response, err := client.ListSecretBundleVersions(context.Background(), request)
-	if err != nil {
-		logger.Fatalf("can't get a response from the secret service: %s", err)
-	}
+	log.Info("getting the secrets client...")
+	// secretsClient := s.GetSecretsClient()
 
-	logger.Info(response.Items)
-}
-
-func getSecret(client secrets.SecretsClient) {
-	logger := funcLog("getSecretBundle")
-
-	request := secrets.GetSecretBundleRequest{
-		OpcRequestId: common.String("42-get-my-secret"),
-		SecretId:     common.String(secretId),
-		Stage:        secrets.GetSecretBundleStageLatest,
-	}
-
-	logger.Info("calling the secret service...")
-	response, err := client.GetSecretBundle(context.Background(), request)
-	if err != nil {
-		logger.Fatalf("can't get a response from the secret service: %s", err)
-	}
-
-	logger.Info(response.SecretBundleContent)
-}
-
-func getSecretsClient() secrets.SecretsClient {
-	logger := funcLog("getSecretsClient")
-	client, err := secrets.NewSecretsClientWithConfigurationProvider(common.DefaultConfigProvider())
-	if err != nil {
-		logger.Fatalf("can't get a secrets client: %s", err)
-	}
-	logger.Info("default secret client has been obtained")
-	return client
-}
-
-func funcLog(f string) *log.Entry {
-	return log.WithFields(log.Fields{
-		"func": f,
-	})
+	log.Info("listing secrets...")
+	// s.ListSecretVersions(secretsClient, secretId)
+	log.Info("getting the secret...")
+	// s.GetSecret(secretsClient, secretId)
 }
