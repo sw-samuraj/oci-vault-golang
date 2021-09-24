@@ -5,6 +5,7 @@ import (
 	l "cz.sw-samuraj/oci-vault/logging"
 	"github.com/oracle/oci-go-sdk/v47/common"
 	"github.com/oracle/oci-go-sdk/v47/keymanagement"
+	"time"
 )
 
 func GetKmsClient() keymanagement.KmsVaultClient {
@@ -31,7 +32,7 @@ func ListVaults(client keymanagement.KmsVaultClient, compartmentId string) []key
 		log.Fatalf("can't get a response from the vault kms service: %s", err)
 	}
 
-	log.Info(response.Items)
+	log.Infof("vaults in compartment: %s", response.Items)
 	return response.Items
 }
 
@@ -46,7 +47,7 @@ func DeleteExistingVaults(client keymanagement.KmsVaultClient, vaults []keymanag
 	var toDelete []keymanagement.VaultSummary
 	for _, v := range vaults {
 		if v.LifecycleState == keymanagement.VaultSummaryLifecycleStateActive {
-			log.Infof("vault will be scheduled for delete: %s (%s)", v.DisplayName, v.Id)
+			log.Infof("vault will be scheduled for delete: %s (%s)", *v.DisplayName, *v.Id)
 			toDelete = append(toDelete, v)
 		}
 	}
@@ -57,8 +58,6 @@ func DeleteExistingVaults(client keymanagement.KmsVaultClient, vaults []keymanag
 	}
 
 	for _, v := range toDelete {
-		log.Infof("vault will be scheduled for delete: %s (%s)", v.DisplayName, v.Id)
-
 		request := keymanagement.ScheduleVaultDeletionRequest{
 			OpcRequestId: common.String("42-delete-my-vault"),
 			VaultId:      v.Id,
@@ -69,8 +68,53 @@ func DeleteExistingVaults(client keymanagement.KmsVaultClient, vaults []keymanag
 		if err != nil {
 			log.Fatalf("can't get a response from the secret service: %s", err)
 		}
-		log.Infof("vault has been scheduled for delete: %s (%s)", response.DisplayName, response.Id)
+		log.Infof("vault has been scheduled for delete: %s (%s)", *response.DisplayName, *response.Id)
 	}
 
 	log.Infof("%d vaults have been scheduled for deletion", len(toDelete))
+}
+
+func CreateVault(client keymanagement.KmsVaultClient, compartmentId string) *string {
+	log := l.FuncLog("CreateVault")
+
+	request := keymanagement.CreateVaultRequest{
+		OpcRequestId: common.String("42-create-my-vault"),
+		CreateVaultDetails: keymanagement.CreateVaultDetails{
+			CompartmentId: common.String(compartmentId),
+			DisplayName:   common.String("sw-samuraj-vault"),
+			VaultType:     keymanagement.CreateVaultDetailsVaultTypeDefault,
+		},
+	}
+
+	log.Info("calling the vault kms service...")
+	response, err := client.CreateVault(context.Background(), request)
+	if err != nil {
+		log.Fatalf("can't get a response from the vault kms service: %s", err)
+	}
+
+	log.Infof("vault has been created: %s", response.Vault)
+	return response.Id
+}
+
+func CheckVaultAvailability(client keymanagement.KmsVaultClient, vaultId *string) {
+	log := l.FuncLog("CheckVaultAvailability")
+
+	request := keymanagement.GetVaultRequest{
+		OpcRequestId: common.String("42-get-my-vault"),
+		VaultId: vaultId,
+	}
+
+	for {
+		response, err := client.GetVault(context.Background(), request)
+		if err != nil {
+			log.Errorf("can't get a response from the vault kms service: %s", err)
+		}
+		if response.LifecycleState == keymanagement.VaultLifecycleStateActive {
+			log.Infof("vault is in the state: %s", response.LifecycleState)
+			break
+		} else {
+			log.Infof("vault is still in the state %s, waiting for 15s", response.LifecycleState)
+			time.Sleep(15 * time.Second)
+		}
+	}
 }

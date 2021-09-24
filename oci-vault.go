@@ -32,6 +32,12 @@ func main() {
 	log.Info("deleting existing vaults...")
 	k.DeleteExistingVaults(kmsClient, vaults)
 
+	log.Info("creating a new vault...")
+	vaultId := k.CreateVault(kmsClient, compartmentId)
+
+	log.Info("checking vault availability...")
+	k.CheckVaultAvailability(kmsClient, vaultId)
+
 	log.Info("getting the vaults client...")
 	// vaultsClient := v.GetVaultsClient()
 
