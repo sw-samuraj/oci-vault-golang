@@ -3,6 +3,7 @@ package kms
 import (
 	"context"
 	l "cz.sw-samuraj/oci-vault/logging"
+	"fmt"
 	"github.com/oracle/oci-go-sdk/v47/common"
 	"github.com/oracle/oci-go-sdk/v47/keymanagement"
 	"time"
@@ -32,8 +33,18 @@ func ListVaults(client keymanagement.KmsVaultClient, compartmentId string) []key
 		log.Fatalf("can't get a response from the vault kms service: %s", err)
 	}
 
-	log.Infof("vaults in compartment: %s", response.Items)
+	log.Infof("vaults in compartment: %s", formatVaults(response.Items))
 	return response.Items
+}
+
+func formatVaults(vaults []keymanagement.VaultSummary) string {
+	vaultsString := ""
+	for _, v := range vaults {
+		vaultId := fmt.Sprintf("%s...%s", (*v.Id)[:42], (*v.Id)[92:])
+		timeCreated := v.TimeCreated.Format(time.RFC3339)
+		vaultsString += fmt.Sprintf("\n    %s, %s, %s, %s", *v.DisplayName, v.LifecycleState, timeCreated, vaultId)
+	}
+	return vaultsString
 }
 
 func DeleteExistingVaults(client keymanagement.KmsVaultClient, vaults []keymanagement.VaultSummary) {
@@ -101,7 +112,7 @@ func CheckVaultAvailability(client keymanagement.KmsVaultClient, vaultId *string
 
 	request := keymanagement.GetVaultRequest{
 		OpcRequestId: common.String("42-get-my-vault"),
-		VaultId: vaultId,
+		VaultId:      vaultId,
 	}
 
 	for {
