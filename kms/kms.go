@@ -9,13 +9,23 @@ import (
 	"time"
 )
 
-func GetKmsClient() keymanagement.KmsVaultClient {
-	log := l.FuncLog("GetKmsClient")
+func GetKmsVaultClient() keymanagement.KmsVaultClient {
+	log := l.FuncLog("GetKmsVaultClient")
 	client, err := keymanagement.NewKmsVaultClientWithConfigurationProvider(common.DefaultConfigProvider())
 	if err != nil {
-		log.Fatalf("can't get a vault kms client: %s", err)
+		log.Fatalf("can't get a kms vault client: %s", err)
 	}
 	log.Info("vaults kms client has been obtained")
+	return client
+}
+
+func GetKmsManagementClient(endpoint *string) keymanagement.KmsManagementClient {
+	log := l.FuncLog("GetKmsManagementClient")
+	client, err := keymanagement.NewKmsManagementClientWithConfigurationProvider(common.DefaultConfigProvider(), *endpoint)
+	if err != nil {
+		log.Fatalf("can't get a kms management client: %s", err)
+	}
+	log.Info("kms management client has been obtained")
 	return client
 }
 
@@ -27,10 +37,10 @@ func ListVaults(client keymanagement.KmsVaultClient, compartmentId string) []key
 		CompartmentId: common.String(compartmentId),
 	}
 
-	log.Info("calling the vault kms service...")
+	log.Info("calling the kms vault service...")
 	response, err := client.ListVaults(context.Background(), request)
 	if err != nil {
-		log.Fatalf("can't get a response from the vault kms service: %s", err)
+		log.Fatalf("can't get a response from the kms vault service: %s", err)
 	}
 
 	log.Infof("vaults in compartment: %s", formatVaults(response.Items))
@@ -74,7 +84,7 @@ func DeleteExistingVaults(client keymanagement.KmsVaultClient, vaults []keymanag
 			VaultId:      v.Id,
 		}
 
-		log.Info("calling the vault kms service...")
+		log.Info("calling the kms vault service...")
 		response, err := client.ScheduleVaultDeletion(context.Background(), request)
 		if err != nil {
 			log.Fatalf("can't get a response from the secret service: %s", err)
@@ -97,18 +107,18 @@ func CreateVault(client keymanagement.KmsVaultClient, compartmentId string) *str
 		},
 	}
 
-	log.Info("calling the vault kms service...")
+	log.Info("calling the kms vault service...")
 	response, err := client.CreateVault(context.Background(), request)
 	if err != nil {
-		log.Fatalf("can't get a response from the vault kms service: %s", err)
+		log.Fatalf("can't get a response from the kms vault service: %s", err)
 	}
 
 	log.Infof("vault has been created: %s", response.Vault)
 	return response.Id
 }
 
-func CheckVaultAvailability(client keymanagement.KmsVaultClient, vaultId *string) {
-	log := l.FuncLog("CheckVaultAvailability")
+func GetManagementEndpoint(client keymanagement.KmsVaultClient, vaultId *string) *string {
+	log := l.FuncLog("GetManagementEndpoint")
 
 	request := keymanagement.GetVaultRequest{
 		OpcRequestId: common.String("42-get-my-vault"),
@@ -118,14 +128,41 @@ func CheckVaultAvailability(client keymanagement.KmsVaultClient, vaultId *string
 	for {
 		response, err := client.GetVault(context.Background(), request)
 		if err != nil {
-			log.Errorf("can't get a response from the vault kms service: %s", err)
+			log.Errorf("can't get a response from the kms vault service: %s", err)
 		}
 		if response.LifecycleState == keymanagement.VaultLifecycleStateActive {
 			log.Infof("vault is in the state: %s", response.LifecycleState)
-			break
+			log.Infof("management endpoint has been received: %s", *response.ManagementEndpoint)
+			return response.ManagementEndpoint
 		} else {
 			log.Infof("vault is still in the state %s, waiting for 15s", response.LifecycleState)
 			time.Sleep(15 * time.Second)
 		}
 	}
+}
+
+func CreateMasterKey(client keymanagement.KmsManagementClient, compartmentId string) *string {
+	log := l.FuncLog("CreateMasterKey")
+
+	request := keymanagement.CreateKeyRequest{
+		OpcRequestId: common.String("42-create-my-key"),
+		CreateKeyDetails: keymanagement.CreateKeyDetails{
+			CompartmentId: common.String(compartmentId),
+			DisplayName:   common.String("sw-samuraj-master-key"),
+			KeyShape: &keymanagement.KeyShape{
+				Algorithm: keymanagement.KeyShapeAlgorithmAes,
+				Length:    common.Int(32),
+			},
+			ProtectionMode: keymanagement.CreateKeyDetailsProtectionModeHsm,
+		},
+	}
+
+	log.Info("calling the kms management service...")
+	response, err := client.CreateKey(context.Background(), request)
+	if err != nil {
+		log.Fatalf("can't get a response from the kms management service: %s", err)
+	}
+
+	log.Infof("master key has been created: %s", response.Key)
+	return response.Id
 }

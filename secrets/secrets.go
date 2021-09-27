@@ -17,12 +17,12 @@ func GetSecretsClient() secrets.SecretsClient {
 	return client
 }
 
-func ListSecretVersions(client secrets.SecretsClient, secretId string) {
+func ListSecretVersions(client secrets.SecretsClient, secretId *string) {
 	log := l.FuncLog("ListSecretVersions")
 
 	request := secrets.ListSecretBundleVersionsRequest{
 		OpcRequestId: common.String("42-get-my-secret"),
-		SecretId:     common.String(secretId),
+		SecretId:     secretId,
 	}
 
 	log.Info("calling the secret service...")
@@ -34,12 +34,12 @@ func ListSecretVersions(client secrets.SecretsClient, secretId string) {
 	log.Info(response.Items)
 }
 
-func GetSecret(client secrets.SecretsClient, secretId string) {
+func GetSecret(client secrets.SecretsClient, secretId *string) {
 	logger := l.FuncLog("GetSecret")
 
 	request := secrets.GetSecretBundleRequest{
 		OpcRequestId: common.String("42-get-my-secret"),
-		SecretId:     common.String(secretId),
+		SecretId:     secretId,
 		Stage:        secrets.GetSecretBundleStageLatest,
 	}
 
