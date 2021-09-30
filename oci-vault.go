@@ -28,19 +28,14 @@ func main() {
 	kmsVaultClient := k.GetKmsVaultClient()
 
 	log.Info("listing vaults...")
-	// vaults := k.ListVaults(kmsVaultClient, compartmentId)
-	k.ListVaults(kmsVaultClient, compartmentId)
+	vaults := k.ListVaults(kmsVaultClient, compartmentId)
 
-	// TODO Guido: temporarily disable vault creation because of limits
-	// log.Info("deleting existing vaults...")
-	// k.DeleteExistingVaults(kmsVaultClient, vaults)
+	log.Info("deleting existing vaults...")
+	k.DeleteExistingVaults(kmsVaultClient, vaults)
 
-	// log.Info("creating a new vault...")
-	// vaultId := k.CreateVault(kmsVaultClient, compartmentId)
+	log.Info("creating a new vault...")
+	vaultId := k.CreateVault(kmsVaultClient, compartmentId)
 
-	// vi := "ocid1.vault.oc1.eu-frankfurt-1.b5qvell7aaaao.abtheljsp3iybqbx4awmcdyzisocmnjsa6ypqv3nu24v4qetgrjix4mokzaq"
-	vi := "ocid1.vault.oc1.eu-frankfurt-1.b5qvelxgaafak.abtheljrn2uspkm4ojrnpuwgkd7syoohv4bel2qx5jlftt7ywofipoh2i5ja"
-	vaultId := &vi
 	log.Info("checking vault availability, waiting for management endpoint...")
 	managementEndpoint := k.GetManagementEndpoint(kmsVaultClient, vaultId)
 
