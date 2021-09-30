@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"github.com/oracle/oci-go-sdk/v47/common"
 	"github.com/oracle/oci-go-sdk/v47/vault"
+	"time"
 )
 
 func GetVaultsClient() vault.VaultsClient {
@@ -25,7 +26,7 @@ func CreateSecret(client vault.VaultsClient, compartmentId string, vaultId *stri
 		OpcRequestId: common.String("42-create-my-secret"),
 		CreateSecretDetails: vault.CreateSecretDetails{
 			CompartmentId: common.String(compartmentId),
-			SecretName:    common.String("sw-samuraj-private-key"),
+			SecretName:    common.String("sw-samuraj-private-key-" + getTimestampString()),
 			VaultId:       vaultId,
 			KeyId:         keyId,
 			SecretContent: vault.Base64SecretContentDetails{
@@ -40,6 +41,10 @@ func CreateSecret(client vault.VaultsClient, compartmentId string, vaultId *stri
 		log.Fatalf("can't get a response from the vault service: %s", err)
 	}
 
-	log.Infof("secret has been created: %s", response.Id)
+	log.Infof("secret has been created: %s", response.Secret)
 	return response.Id
+}
+
+func getTimestampString() string {
+	return time.Now().Format("20060102150105")
 }

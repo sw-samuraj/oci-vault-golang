@@ -3,6 +3,7 @@ package secrets
 import (
 	"context"
 	l "cz.sw-samuraj/oci-vault/logging"
+	"encoding/base64"
 	"github.com/oracle/oci-go-sdk/v47/common"
 	"github.com/oracle/oci-go-sdk/v47/secrets"
 )
@@ -49,5 +50,17 @@ func GetSecret(client secrets.SecretsClient, secretId *string) {
 		logger.Fatalf("can't get a response from the secret service: %s", err)
 	}
 
-	logger.Info(response.SecretBundleContent)
+	logger.Infof("secret content: %s", response.SecretBundleContent)
+
+	contentDetails, ok := response.SecretBundleContent.(secrets.Base64SecretBundleContentDetails)
+	if !ok {
+		logger.Errorf("can't cast the secret to %T", response.SecretBundleContent)
+		return
+	}
+	content, err := base64.StdEncoding.DecodeString(*contentDetails.Content)
+	if err != nil {
+		logger.Errorf("can't decode the secret from base64: %s", err)
+		return
+	}
+	logger.Infof("decoded secret: %s", content)
 }

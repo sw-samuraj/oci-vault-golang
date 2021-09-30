@@ -38,7 +38,8 @@ func main() {
 	// log.Info("creating a new vault...")
 	// vaultId := k.CreateVault(kmsVaultClient, compartmentId)
 
-	vi := "ocid1.vault.oc1.eu-frankfurt-1.b5qvell7aaaao.abtheljsp3iybqbx4awmcdyzisocmnjsa6ypqv3nu24v4qetgrjix4mokzaq"
+	// vi := "ocid1.vault.oc1.eu-frankfurt-1.b5qvell7aaaao.abtheljsp3iybqbx4awmcdyzisocmnjsa6ypqv3nu24v4qetgrjix4mokzaq"
+	vi := "ocid1.vault.oc1.eu-frankfurt-1.b5qvelxgaafak.abtheljrn2uspkm4ojrnpuwgkd7syoohv4bel2qx5jlftt7ywofipoh2i5ja"
 	vaultId := &vi
 	log.Info("checking vault availability, waiting for management endpoint...")
 	managementEndpoint := k.GetManagementEndpoint(kmsVaultClient, vaultId)
@@ -49,7 +50,8 @@ func main() {
 	log.Info("creating a new master key...")
 	keyId := k.CreateMasterKey(kmsManagementClient, compartmentId)
 
-	// TODO Guido: check key availability
+	log.Info("checking key availability...")
+	k.CheckKeyAvailability(kmsManagementClient, keyId)
 
 	log.Info("getting the vaults client...")
 	vaultsClient := v.GetVaultsClient()

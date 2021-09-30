@@ -166,3 +166,26 @@ func CreateMasterKey(client keymanagement.KmsManagementClient, compartmentId str
 	log.Infof("master key has been created: %s", response.Key)
 	return response.Id
 }
+
+func CheckKeyAvailability(client keymanagement.KmsManagementClient, keyId *string) {
+	log := l.FuncLog("CheckKeyAvailability")
+
+	request := keymanagement.GetKeyRequest{
+		OpcRequestId: common.String("42-get-my-key"),
+		KeyId: keyId,
+	}
+
+	for {
+		response, err := client.GetKey(context.Background(), request)
+		if err != nil {
+			log.Errorf("can't get a response from the kms management service: %s", err)
+		}
+		if response.LifecycleState == keymanagement.KeyLifecycleStateEnabled {
+			log.Infof("key is in the state: %s", response.LifecycleState)
+			break
+		} else {
+			log.Infof("key is still in the state %s, waiting for 10s", response.LifecycleState)
+			time.Sleep(10 * time.Second)
+		}
+	}
+}
