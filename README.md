@@ -5,7 +5,7 @@ This is an supporting project for the article about managing
 service via Golang SDK.
 
 You can read the article here:
-[OCI Vault & Secrets service via Golang](/medium.com/@sw_samuraj/)
+[OCI Vault & Secrets service via Golang](//medium.com/@sw_samuraj/)
 
 ## How to build the example
 
