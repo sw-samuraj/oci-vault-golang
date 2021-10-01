@@ -10,7 +10,8 @@ import (
 
 const (
 	// compartment: sw-samuraj/vault-golang
-	compartmentId = "ocid1.compartment.oc1..aaaaaaaangukhnc5jjl34tzm6dbh3blca3f4uviti3niavpttn6qgxddlsna"
+	// compartmentId = "ocid1.compartment.oc1..aaaaaaaangukhnc5jjl34tzm6dbh3blca3f4uviti3niavpttn6qgxddlsna"
+	compartmentId = "ocid1.compartment.oc1..aaaaaaaavwsgxcpgcfp7hn4ojqej26kofxjtqtqs4bertq2qfq5s5qycvxzq"
 )
 
 func init() {

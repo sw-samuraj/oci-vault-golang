@@ -2,3 +2,4 @@ oci-vault
 go.sum
 .idea
 *.iml
+*.swp
